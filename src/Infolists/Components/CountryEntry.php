@@ -3,6 +3,7 @@
 namespace Parfaitementweb\FilamentCountryField\Infolists\Components;
 
 use Filament\Infolists\Components\TextEntry;
+use Parfaitementweb\FilamentCountryField\Data\CountryCodeMapping;
 use Parfaitementweb\FilamentCountryField\Traits\HasData;
 
 class CountryEntry extends TextEntry
@@ -14,7 +15,35 @@ class CountryEntry extends TextEntry
         $countries = $this->getCountriesList();
         $state = $this->getState();
 
-        return $countries[$state] ?? $state;
+        // Handle both alpha-2 and alpha-3 codes in the state
+        return $countries[$state] ?? $this->findCountryLabel($state, $countries) ?? $state;
+    }
+
+    protected function findCountryLabel(mixed $state, array $countries): ?string
+    {
+        if (! is_string($state)) {
+            return null;
+        }
+
+        $state = strtoupper($state);
+
+        // If we're using alpha3 and the state is alpha-2, convert it
+        if ($this->getUseAlpha3() && strlen($state) === 2) {
+            $alpha3Code = CountryCodeMapping::alpha2ToAlpha3($state);
+            if ($alpha3Code && isset($countries[$alpha3Code])) {
+                return $countries[$alpha3Code];
+            }
+        }
+
+        // If we're not using alpha3 and the state is alpha-3, convert it
+        if (! $this->getUseAlpha3() && strlen($state) === 3) {
+            $alpha2Code = CountryCodeMapping::alpha3ToAlpha2($state);
+            if ($alpha2Code && isset($countries[$alpha2Code])) {
+                return $countries[$alpha2Code];
+            }
+        }
+
+        return null;
     }
 
     protected function setUp(): void

@@ -5,9 +5,12 @@ namespace Parfaitementweb\FilamentCountryField\Traits;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Str;
+use Parfaitementweb\FilamentCountryField\Data\CountryCodeMapping;
 
 trait HasData
 {
+    protected bool $useAlpha3 = false;
+
     public function getCountriesList(): array
     {
         return $this->getList();
@@ -23,7 +26,36 @@ trait HasData
             }
         }
 
-        return __('filament-country-field::country', locale: $locale);
+        $countries = __('filament-country-field::country', locale: $locale);
+
+        // If alpha3 is enabled, convert the keys from alpha-2 to alpha-3
+        if ($this->useAlpha3) {
+            $alpha3Countries = [];
+            foreach ($countries as $alpha2Code => $countryName) {
+                $alpha3Code = CountryCodeMapping::alpha2ToAlpha3($alpha2Code);
+                if ($alpha3Code) {
+                    $alpha3Countries[$alpha3Code] = $countryName;
+                } else {
+                    // Fallback to original code if mapping not found
+                    $alpha3Countries[$alpha2Code] = $countryName;
+                }
+            }
+            return $alpha3Countries;
+        }
+
+        return $countries;
+    }
+
+    public function alpha3(bool $condition = true): static
+    {
+        $this->useAlpha3 = $condition;
+
+        return $this;
+    }
+
+    protected function getUseAlpha3(): bool
+    {
+        return $this->useAlpha3;
     }
 
     protected function getFlagEmoji(?string $countryCode): string
@@ -33,6 +65,16 @@ trait HasData
         }
 
         $countryCode = strtoupper($countryCode);
+
+        // Convert alpha-3 to alpha-2 if needed (flags use alpha-2 codes)
+        if (strlen($countryCode) === 3) {
+            $alpha2Code = CountryCodeMapping::alpha3ToAlpha2($countryCode);
+            if ($alpha2Code) {
+                $countryCode = $alpha2Code;
+            } else {
+                return '';
+            }
+        }
 
         if (strlen($countryCode) !== 2) {
             return '';
