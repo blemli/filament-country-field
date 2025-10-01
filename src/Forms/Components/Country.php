@@ -19,29 +19,35 @@ class Country extends Select
 
     protected array | Arrayable | string | Closure | null $only = null;
 
+    protected bool | Closure $displayFlag = false;
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->options($this->getOptions());
+        $this->options(fn () => $this->resolveDefaultOptions());
     }
 
     public function getOptions(): array
     {
         $options = $this->evaluate($this->options) ?? [];
 
+        if ($options instanceof Arrayable) {
+            $options = $options->toArray();
+        }
+
         if (! empty($options)) {
-
-            if ($options instanceof Arrayable) {
-                $options = $options->toArray();
-            }
-
             return $options;
         }
 
+        return $this->resolveDefaultOptions();
+    }
+
+    protected function resolveDefaultOptions(): array
+    {
         $countries = $this->getCountriesList();
 
-        return collect($countries)
+        $collection = collect($countries)
             ->when($this->only, function ($options) {
                 $onlyCountries = $this->getOnly();
 
@@ -68,8 +74,15 @@ class Country extends Select
             ->reject(function ($country, $key) {
                 return in_array($key, $this->getExclude());
             })
-            ->sort()
-            ->toArray();
+            ->sort();
+
+        if ($this->getDisplayFlag()) {
+            $collection = $collection->map(function ($country, $key) {
+                return $this->formatCountryLabelWithFlag($key, $country);
+            });
+        }
+
+        return $collection->toArray();
     }
 
     public function map(array | Closure | string | Arrayable | null $mapped = null): static
@@ -118,5 +131,17 @@ class Country extends Select
     public function getOnly(): array
     {
         return $this->evaluate($this->only ?? []);
+    }
+
+    public function flag(bool | Closure $condition = true): static
+    {
+        $this->displayFlag = $condition;
+
+        return $this;
+    }
+
+    protected function getDisplayFlag(): bool
+    {
+        return (bool) $this->evaluate($this->displayFlag);
     }
 }
