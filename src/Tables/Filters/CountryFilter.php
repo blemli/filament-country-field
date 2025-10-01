@@ -29,20 +29,12 @@ class CountryFilter extends SelectFilter
         $this->options(fn () => $this->resolveDefaultOptions());
     }
 
-    public function relationship(string $name, string $titleAttribute = null, ?Closure $modifyQueryUsing = null): static
+    public function relationship(Closure|string|null $name, Closure|string|null $titleAttribute = null, ?Closure $modifyQueryUsing = null, Closure|bool $hasEmptyOption = false): static
     {
-        $this->relationship = $name;
-        $this->relationshipTitleAttribute = $titleAttribute;
-        $this->modifyRelationshipQueryUsing = $modifyQueryUsing;
-
-        $this->loadStateFromRelationshipsUsing(static function (SelectFilter $component, HasTable $livewire): void {
-            $component->fillFromRelationship();
-        });
-
-        return $this;
+        return parent::relationship($name, $titleAttribute, $modifyQueryUsing, $hasEmptyOption);
     }
 
-    public function fromDatabase(string $column = null): static
+    public function fromDatabase(?string $column = null): static
     {
         $column = $column ?? $this->getName();
 
@@ -111,9 +103,10 @@ class CountryFilter extends SelectFilter
                 return $filtered->isEmpty() ? $options : $filtered;
             })
             ->when($this->mapped, function ($options) {
-                return $options->mapWithKeys(function ($country, $key) {
-                    if (in_array($key, array_keys($this->mapped))) {
-                        return [$this->mapped[$key] => $country];
+                $mapped = $this->getMap();
+                return $options->mapWithKeys(function ($country, $key) use ($mapped) {
+                    if (isset($mapped[$key])) {
+                        return [$mapped[$key] => $country];
                     }
 
                     return [$key => $country];
@@ -211,9 +204,10 @@ class CountryFilter extends SelectFilter
                 return $filtered->isEmpty() ? $options : $filtered;
             })
             ->when($this->mapped, function ($options) {
-                return $options->mapWithKeys(function ($country, $key) {
-                    if (in_array($key, array_keys($this->mapped))) {
-                        return [$this->mapped[$key] => $country];
+                $mapped = $this->getMap();
+                return $options->mapWithKeys(function ($country, $key) use ($mapped) {
+                    if (isset($mapped[$key])) {
+                        return [$mapped[$key] => $country];
                     }
 
                     return [$key => $country];
