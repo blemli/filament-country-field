@@ -2,6 +2,7 @@
 
 namespace Parfaitementweb\FilamentCountryField\Infolists\Components;
 
+use Closure;
 use Filament\Infolists\Components\TextEntry;
 use Parfaitementweb\FilamentCountryField\Data\CountryCodeMapping;
 use Parfaitementweb\FilamentCountryField\Traits\HasData;
@@ -10,13 +11,21 @@ class CountryEntry extends TextEntry
 {
     use HasData;
 
+    protected bool | Closure $displayFlag = false;
+
     public function nativeCountry()
     {
         $countries = $this->getCountriesList();
         $state = $this->getState();
 
         // Handle both alpha-2 and alpha-3 codes in the state
-        return $countries[$state] ?? $this->findCountryLabel($state, $countries) ?? $state;
+        $label = $countries[$state] ?? $this->findCountryLabel($state, $countries) ?? $state;
+
+        if (! $this->getDisplayFlag()) {
+            return $label;
+        }
+
+        return $this->formatCountryLabelWithFlag(is_string($state) ? $state : '', (string) $label);
     }
 
     protected function findCountryLabel(mixed $state, array $countries): ?string
@@ -44,6 +53,18 @@ class CountryEntry extends TextEntry
         }
 
         return null;
+    }
+
+    public function flag(bool | Closure $condition = true): static
+    {
+        $this->displayFlag = $condition;
+
+        return $this;
+    }
+
+    protected function getDisplayFlag(): bool
+    {
+        return (bool) $this->evaluate($this->displayFlag);
     }
 
     protected function setUp(): void
