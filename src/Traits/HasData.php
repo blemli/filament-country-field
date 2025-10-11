@@ -2,9 +2,11 @@
 
 namespace Parfaitementweb\FilamentCountryField\Traits;
 
+use Filament\Support\Enums\Platform;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Str;
+use function request;
 
 trait HasData
 {
@@ -54,8 +56,12 @@ trait HasData
 
     protected function formatCountryLabelWithFlag(string $countryCode, string $label): string
     {
-        $flag = $this->getFlagEmoji($countryCode);
-
+        if( Platform::detect()== Platform::Windows){
+            $flag = '';
+        }
+        else {
+            $flag = $this->getFlagEmoji($countryCode);
+        }
         return $flag === '' ? $label : trim($flag . ' ' . $label);
     }
 }
