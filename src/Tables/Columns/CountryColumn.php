@@ -4,6 +4,7 @@ namespace Parfaitementweb\FilamentCountryField\Tables\Columns;
 
 use Closure;
 use Filament\Tables\Columns\TextColumn;
+use Illuminate\Database\Eloquent\Model;
 use Parfaitementweb\FilamentCountryField\Data\CountryCodeMapping;
 use Parfaitementweb\FilamentCountryField\Traits\HasData;
 
@@ -13,7 +14,7 @@ class CountryColumn extends TextColumn
 
     protected bool | Closure $displayFlag = false;
 
-    public function formatState(mixed $state): mixed
+    public function formatState(mixed $state, ?Model $relatedRecord = null): mixed
     {
         $countries = $this->getCountriesList();
 
